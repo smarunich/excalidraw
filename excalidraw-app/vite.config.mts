@@ -147,6 +147,8 @@ export default defineConfig(({ mode }) => {
             "service-worker.js",
             "**/*.chunk-*.js",
           ],
+          // Increase the precache size limit to handle larger bundles  
+          maximumFileSizeToCacheInBytes: 5000000, // 5MB
           runtimeCaching: [
             {
               urlPattern: new RegExp(".+.woff2"),

@@ -24,7 +24,7 @@ export type ColorPickerColor =
 export type ColorTuple = readonly [string, string, string, string, string];
 export type ColorPalette = Merge<
   Record<ColorPickerColor, ColorTuple>,
-  { black: "#1e1e1e"; white: "#ffffff"; transparent: "transparent" }
+  { black: "#0A0D0F"; white: "#FFFFFF"; transparent: "transparent" }
 >;
 
 // used general type instead of specific type (ColorPalette) to support custom colors
@@ -53,70 +53,66 @@ export const getSpecificColorShades = (
 
 export const COLOR_PALETTE = {
   transparent: "transparent",
-  black: "#1e1e1e",
-  white: "#ffffff",
-  // open-colors
-  gray: getSpecificColorShades("gray", ELEMENTS_PALETTE_SHADE_INDEXES),
-  red: getSpecificColorShades("red", ELEMENTS_PALETTE_SHADE_INDEXES),
+  black: "#0A0D0F",
+  white: "#FFFFFF",
+  // Complete Tetrate color palette with all tints and shades
+  gray: ["#F5F5F5", "#EBECEC", "#D8D9D9", "#9D9E9F", "#3B3D3F"],
+  red: ["#fde1e0", "#fac3c1", "#f8a4a1", "#F36863", "#c2534f"],
   pink: getSpecificColorShades("pink", ELEMENTS_PALETTE_SHADE_INDEXES),
-  grape: getSpecificColorShades("grape", ELEMENTS_PALETTE_SHADE_INDEXES),
-  violet: getSpecificColorShades("violet", ELEMENTS_PALETTE_SHADE_INDEXES),
-  blue: getSpecificColorShades("blue", ELEMENTS_PALETTE_SHADE_INDEXES),
+  grape: ["#DDD3FC", "#bca6f9", "#9a7af6", "#5721F0", "#461ac0"],
+  violet: ["#DDD3FC", "#bca6f9", "#9a7af6", "#5721F0", "#461ac0"],
+  blue: ["#D2E4FF", "#a4c8fe", "#77adfe", "#1C76FD", "#165eca"],
   cyan: getSpecificColorShades("cyan", ELEMENTS_PALETTE_SHADE_INDEXES),
   teal: getSpecificColorShades("teal", ELEMENTS_PALETTE_SHADE_INDEXES),
-  green: getSpecificColorShades("green", ELEMENTS_PALETTE_SHADE_INDEXES),
-  yellow: getSpecificColorShades("yellow", ELEMENTS_PALETTE_SHADE_INDEXES),
-  orange: getSpecificColorShades("orange", ELEMENTS_PALETTE_SHADE_INDEXES),
-  // radix bronze shades 3,5,7,9,11
+  green: ["#e2f3e8", "#c5e7d1", "#a7dab9", "#6DC28B", "#579b6f"],
+  yellow: ["#fff5de", "#ffeabe", "#ffe09d", "#FFCB5C", "#cca24a"],
+  orange: ["#FFDDCC", "#FFBB99", "#FF9966", "#FF5500", "#CC4400"],
+  // tetrate bronze shades
   bronze: ["#f8f1ee", "#eaddd7", "#d2bab0", "#a18072", "#846358"],
 } as ColorPalette;
 
 const COMMON_ELEMENT_SHADES = pick(COLOR_PALETTE, [
-  "cyan",
-  "blue",
-  "violet",
+  "orange", // Tetrate Orange - primary brand color
+  "violet", // Tetrate Purple - primary supporting  
+  "blue", // Tetrate Blue - primary supporting
+  "red", // Tetrate Red - supporting
+  "yellow", // Tetrate Yellow - supporting
+  "green", // Tetrate Green - supporting
   "grape",
-  "pink",
-  "green",
+  "cyan",
   "teal",
-  "yellow",
-  "orange",
-  "red",
+  "pink",
 ]);
 
 // -----------------------------------------------------------------------------
 // quick picks defaults
 // -----------------------------------------------------------------------------
 
-// ORDER matters for positioning in quick picker
+// ORDER matters for positioning in quick picker - Tetrate brand colors first
 export const DEFAULT_ELEMENT_STROKE_PICKS = [
-  COLOR_PALETTE.black,
-  COLOR_PALETTE.red[DEFAULT_ELEMENT_STROKE_COLOR_INDEX],
-  COLOR_PALETTE.green[DEFAULT_ELEMENT_STROKE_COLOR_INDEX],
-  COLOR_PALETTE.blue[DEFAULT_ELEMENT_STROKE_COLOR_INDEX],
-  COLOR_PALETTE.yellow[DEFAULT_ELEMENT_STROKE_COLOR_INDEX],
+  COLOR_PALETTE.orange[DEFAULT_ELEMENT_STROKE_COLOR_INDEX], // Tetrate Orange primary #FF5500
+  COLOR_PALETTE.black, // Tetrate Black #0A0D0F
+  COLOR_PALETTE.violet[DEFAULT_ELEMENT_STROKE_COLOR_INDEX], // Tetrate Purple #5721F0
+  COLOR_PALETTE.blue[DEFAULT_ELEMENT_STROKE_COLOR_INDEX], // Tetrate Blue #1C76FD
+  COLOR_PALETTE.red[DEFAULT_ELEMENT_STROKE_COLOR_INDEX], // Tetrate Red #F36863
 ] as ColorTuple;
 
-// ORDER matters for positioning in quick picker
+// ORDER matters for positioning in quick picker - Tetrate brand colors first
 export const DEFAULT_ELEMENT_BACKGROUND_PICKS = [
   COLOR_PALETTE.transparent,
-  COLOR_PALETTE.red[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
-  COLOR_PALETTE.green[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
-  COLOR_PALETTE.blue[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
-  COLOR_PALETTE.yellow[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX],
+  COLOR_PALETTE.orange[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX], // Tetrate Orange light #FFBB99
+  COLOR_PALETTE.violet[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX], // Tetrate Purple light #bca6f9
+  COLOR_PALETTE.blue[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX], // Tetrate Blue light #a4c8fe
+  COLOR_PALETTE.yellow[DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX], // Tetrate Yellow light #ffeabe
 ] as ColorTuple;
 
-// ORDER matters for positioning in quick picker
+// ORDER matters for positioning in quick picker - Tetrate canvas backgrounds
 export const DEFAULT_CANVAS_BACKGROUND_PICKS = [
-  COLOR_PALETTE.white,
-  // radix slate2
-  "#f8f9fa",
-  // radix blue2
-  "#f5faff",
-  // radix yellow2
-  "#fffce8",
-  // radix bronze2
-  "#fdf8f6",
+  COLOR_PALETTE.white, // Tetrate White #FFFFFF
+  "#F5F5F5", // Tetrate Light Gray
+  "#FFDDCC", // Tetrate Orange lightest
+  "#DDD3FC", // Tetrate Purple lightest  
+  "#D2E4FF", // Tetrate Blue lightest
 ] as ColorTuple;
 
 // -----------------------------------------------------------------------------
@@ -124,24 +120,24 @@ export const DEFAULT_CANVAS_BACKGROUND_PICKS = [
 // -----------------------------------------------------------------------------
 
 export const DEFAULT_ELEMENT_STROKE_COLOR_PALETTE = {
-  // 1st row
+  // 1st row - Tetrate primary colors
   transparent: COLOR_PALETTE.transparent,
-  white: COLOR_PALETTE.white,
-  gray: COLOR_PALETTE.gray,
-  black: COLOR_PALETTE.black,
+  black: COLOR_PALETTE.black, // Tetrate Black
+  white: COLOR_PALETTE.white, // Tetrate White
+  gray: COLOR_PALETTE.gray, // Tetrate Gray scale
   bronze: COLOR_PALETTE.bronze,
-  // rest
+  // Tetrate brand colors prioritized
   ...COMMON_ELEMENT_SHADES,
 } as const;
 
-// ORDER matters for positioning in pallete (5x3 grid)s
+// ORDER matters for positioning in pallete (5x3 grid)s - Tetrate colors first
 export const DEFAULT_ELEMENT_BACKGROUND_COLOR_PALETTE = {
   transparent: COLOR_PALETTE.transparent,
-  white: COLOR_PALETTE.white,
-  gray: COLOR_PALETTE.gray,
-  black: COLOR_PALETTE.black,
+  white: COLOR_PALETTE.white, // Tetrate White
+  gray: COLOR_PALETTE.gray, // Tetrate Gray scale  
+  black: COLOR_PALETTE.black, // Tetrate Black
   bronze: COLOR_PALETTE.bronze,
-
+  // Tetrate brand colors prioritized
   ...COMMON_ELEMENT_SHADES,
 } as const;
 

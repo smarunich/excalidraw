@@ -1,0 +1,267 @@
+version: '3'
+
+vars:
+  PROJECT_NAME: excalidraw
+  DOCKER_IMAGE: "{{.PROJECT_NAME}}"
+  CONTAINER_NAME: "{{.PROJECT_NAME}}-container"
+  DEV_PORT: 3001
+  PROD_PORT: 8081
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  # Development tasks
+  dev:
+    desc: Start Excalidraw in development mode with hot reload
+    cmds:
+      - task: check:ports
+      - task: dev:build
+      - task: dev:up
+
+  dev:build:
+    desc: Build development Docker image
+    cmds:
+      - docker build -t {{.DOCKER_IMAGE}}:dev --target build --build-arg NODE_ENV=development --load .
+    sources:
+      - Dockerfile
+      - package.json
+      - yarn.lock
+      - packages/**/*
+      - excalidraw-app/**/*
+    generates:
+      - .task/checksum/dev-build
+
+  dev:up:
+    desc: Start development container with volume mounts
+    deps: [dev:build]
+    cmds:
+      - docker run --rm 
+        --name {{.CONTAINER_NAME}}-dev
+        -p {{.DEV_PORT}}:3000
+        -v "$(pwd):/opt/node_app"
+        -v /opt/node_app/node_modules
+        -v /opt/node_app/excalidraw-app/node_modules
+        -v /opt/node_app/packages/excalidraw/node_modules
+        -e NODE_ENV=development
+        --workdir /opt/node_app/excalidraw-app
+        {{.DOCKER_IMAGE}}:dev
+        yarn start
+
+  dev:compose:
+    desc: Start development using docker-compose
+    cmds:
+      - docker-compose up --build
+
+  dev:compose:down:
+    desc: Stop development docker-compose
+    cmds:
+      - docker-compose down
+
+  # Production tasks
+  prod:
+    desc: Build and run Excalidraw in production mode
+    cmds:
+      - task: check:docker
+      - task: prod:build
+      - task: prod:run
+
+  prod:build:
+    desc: Build production Docker image
+    cmds:
+      - docker build -t {{.DOCKER_IMAGE}}:latest --build-arg NODE_ENV=production .
+    sources:
+      - Dockerfile
+      - package.json
+      - yarn.lock
+      - packages/**/*
+      - excalidraw-app/**/*
+    generates:
+      - .task/checksum/prod-build
+
+  prod:run:
+    desc: Run production container
+    deps: [prod:build]
+    cmds:
+      - docker run --rm -d 
+        --name {{.CONTAINER_NAME}}-prod
+        -p {{.PROD_PORT}}:80
+        {{.DOCKER_IMAGE}}:latest
+
+  prod:stop:
+    desc: Stop production container
+    cmds:
+      - docker stop {{.CONTAINER_NAME}}-prod || true
+
+  # Local development without Docker
+  local:dev:
+    desc: Start local development server (no Docker)
+    cmds:
+      - yarn install
+      - yarn start
+
+  local:build:
+    desc: Build locally for production
+    cmds:
+      - yarn install
+      - yarn build
+
+  local:test:
+    desc: Run tests locally
+    cmds:
+      - yarn install
+      - yarn test:all
+
+  # Container management
+  stop:
+    desc: Stop all running containers
+    cmds:
+      - docker stop {{.CONTAINER_NAME}}-dev {{.CONTAINER_NAME}}-prod || true
+
+  clean:
+    desc: Clean up containers and images
+    cmds:
+      - task: stop
+      - docker rm {{.CONTAINER_NAME}}-dev {{.CONTAINER_NAME}}-prod || true
+      - docker rmi {{.DOCKER_IMAGE}}:dev {{.DOCKER_IMAGE}}:latest || true
+
+  clean:all:
+    desc: Clean up everything including volumes
+    cmds:
+      - task: clean
+      - docker system prune -f
+      - docker volume prune -f
+
+  # Utility tasks
+  logs:
+    desc: Show logs from running container
+    cmds:
+      - |
+        if docker ps --format "table {{.Names}}" | grep -q "{{.CONTAINER_NAME}}-dev"; then
+          docker logs -f {{.CONTAINER_NAME}}-dev
+        elif docker ps --format "table {{.Names}}" | grep -q "{{.CONTAINER_NAME}}-prod"; then
+          docker logs -f {{.CONTAINER_NAME}}-prod
+        else
+          echo "No running {{.PROJECT_NAME}} containers found"
+        fi
+
+  shell:
+    desc: Open shell in running development container
+    cmds:
+      - docker exec -it {{.CONTAINER_NAME}}-dev /bin/bash
+
+  status:
+    desc: Show status of containers
+    cmds:
+      - echo "=== Docker Containers ==="
+      - docker ps --filter "name={{.CONTAINER_NAME}}" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+      - echo ""
+      - echo "=== Docker Images ==="
+      - docker images {{.DOCKER_IMAGE}} --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+
+  health:
+    desc: Check health of running container
+    cmds:
+      - |
+        if docker ps --format "table {{.Names}}" | grep -q "{{.CONTAINER_NAME}}"; then
+          echo "Container is running. Testing connectivity..."
+          if docker ps --format "table {{.Names}}" | grep -q "{{.CONTAINER_NAME}}-dev"; then
+            curl -f http://localhost:{{.DEV_PORT}} || echo "Dev server not responding"
+          elif docker ps --format "table {{.Names}}" | grep -q "{{.CONTAINER_NAME}}-prod"; then
+            curl -f http://localhost:{{.PROD_PORT}} || echo "Prod server not responding"
+          fi
+        else
+          echo "No {{.PROJECT_NAME}} containers are running"
+        fi
+
+  # Quick start tasks
+  quick:dev:
+    desc: Quick start development (stops existing, builds, and runs)
+    cmds:
+      - task: stop
+      - task: dev
+
+  quick:prod:
+    desc: Quick start production (stops existing, builds, and runs)
+    cmds:
+      - task: stop
+      - task: prod
+
+  # Multi-platform build (for production deployment)
+  build:multiplatform:
+    desc: Build multi-platform image for deployment
+    cmds:
+      - docker buildx build --platform linux/amd64,linux/arm64 -t {{.DOCKER_IMAGE}}:latest --build-arg NODE_ENV=production .
+
+  # Development tools
+  lint:
+    desc: Run linting in container
+    deps: [dev:build]
+    cmds:
+      - docker run --rm 
+        -v "$(pwd):/opt/node_app"
+        --workdir /opt/node_app
+        {{.DOCKER_IMAGE}}:dev
+        yarn fix
+
+  test:
+    desc: Run tests in container
+    deps: [dev:build]
+    cmds:
+      - docker run --rm 
+        -v "$(pwd):/opt/node_app"
+        --workdir /opt/node_app
+        {{.DOCKER_IMAGE}}:dev
+        yarn test:all
+
+  # Utility and check tasks
+  check:ports:
+    desc: Check if required ports are available
+    cmds:
+      - |
+        echo "Checking port availability..."
+        if lsof -i :{{.DEV_PORT}} >/dev/null 2>&1; then
+          echo "⚠️  Port {{.DEV_PORT}} is already in use!"
+          echo "Current process using port {{.DEV_PORT}}:"
+          lsof -i :{{.DEV_PORT}}
+          echo ""
+          echo "You can either:"
+          echo "  1. Stop the process using the port"
+          echo "  2. Change DEV_PORT in Taskfile.yml"
+          exit 1
+        else
+          echo "✅ Port {{.DEV_PORT}} is available"
+        fi
+      - |
+        if lsof -i :{{.PROD_PORT}} >/dev/null 2>&1; then
+          echo "⚠️  Port {{.PROD_PORT}} is already in use!"
+          echo "Current process using port {{.PROD_PORT}}:"
+          lsof -i :{{.PROD_PORT}}
+          echo ""
+          echo "You can either:"
+          echo "  1. Stop the process using the port"
+          echo "  2. Change PROD_PORT in Taskfile.yml"
+          exit 1
+        else
+          echo "✅ Port {{.PROD_PORT}} is available"
+        fi
+
+  check:docker:
+    desc: Check if Docker is running
+    cmds:
+      - |
+        if ! docker info >/dev/null 2>&1; then
+          echo "❌ Docker is not running!"
+          echo "Please start Docker and try again."
+          exit 1
+        else
+          echo "✅ Docker is running"
+        fi
+
+  check:all:
+    desc: Run all system checks
+    cmds:
+      - task: check:docker
+      - task: check:ports
